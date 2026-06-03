@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexa ERP - Dashboard Inteligente</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <aside class="sidebar">
+      <div class="logo">NE<span class="nexa-x">X</span>A</div>
+        <ul class="nav-menu">
+            <a href="#" class="nav-item active" data-target="inicio"><i class="fa-solid fa-house"></i> Início</a>
+            <a href="#" class="nav-item" data-target="vendas"><i class="fa-solid fa-cart-shopping"></i> Vendas</a>
+            <a href="#" class="nav-item" data-target="financeiro"><i class="fa-solid fa-wallet"></i> Financeiro</a>
+            <a href="#" class="nav-item" data-target="rh"><i class="fa-solid fa-users"></i> RH</a>
+            <a href="#" class="nav-item" data-target="marketing"><i class="fa-solid fa-chart-simple"></i> Marketing</a>
+            <a href="#" class="nav-item" data-target="logistica"><i class="fa-solid fa-box"></i> Logística</a>
+            
+            <!-- Link do Chat Corporativo -->
+            <a href="#" class="nav-item" data-target="chat"><i class="fa-regular fa-comments"></i> Chat Nexa</a>
+            
+            <a href="#" class="nav-item" style="margin-top: auto;" data-target="configuracoes"><i class="fa-solid fa-gear"></i> Configurações</a>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <header class="header">
+            <div class="search-container">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" class="search-input" placeholder="Peça à Nexus AI para analisar...">
+            </div>
+            <button class="btn btn-primary" onclick="openCart()" style="margin-right: auto; margin-left: 20px;">
+                <i class="fa-solid fa-cart-shopping"></i> Ver Carrinho
+            </button>
+            <div class="profile-area">
+                <i class="fa-regular fa-bell notification"></i>
+                <div class="user-profile">
+                    <div class="avatar"><i class="fa-regular fa-user"></i></div>
+                    <span style="font-weight: 500; font-size: 14px;">Daniel Ribeiro</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-view active" id="view-inicio">
+            <section class="metrics-grid">
+                <div class="card" id="card-vendas">
+                    <div class="card-header"><span class="card-title">Vendas Hoje</span><span class="badge positive" id="badge-vendas"><i class="fa-solid fa-arrow-trend-up"></i> +12.5%</span></div>
+                    <div class="card-value" id="val-vendas">R$ 42.500,00</div>
+                    <svg class="sparkline" viewBox="0 0 200 40" preserveAspectRatio="none"><path d="M0,30 Q40,40 80,20 T160,25 T200,10" fill="none" stroke="var(--success-green)" stroke-width="2"/></svg>
+                </div>
+                <div class="card" id="card-lucro">
+                    <div class="card-header"><span class="card-title">Lucro Mensal</span><span class="badge positive" id="badge-lucro"><i class="fa-solid fa-arrow-trend-up"></i> +8.3%</span></div>
+                    <div class="card-value" id="val-lucro">R$ 128.000,00</div>
+                    <svg class="sparkline" viewBox="0 0 200 40" preserveAspectRatio="none"><path d="M0,35 Q50,30 100,25 T200,10" fill="none" stroke="var(--success-green)" stroke-width="2"/></svg>
+                </div>
+                <div class="card" id="card-pedidos">
+                    <div class="card-header"><span class="card-title">Pedidos em Trânsito</span><span class="badge negative" id="badge-pedidos"><i class="fa-solid fa-arrow-trend-down"></i> -2.4%</span></div>
+                    <div class="card-value" id="val-pedidos">234</div>
+                    <svg class="sparkline" viewBox="0 0 200 40" preserveAspectRatio="none"><path d="M0,20 Q60,10 100,25 T200,20" fill="none" stroke="var(--nexa-purple)" stroke-width="2"/></svg>
+                </div>
+            </section>
+            
+            <section class="bottom-grid">
+                <div class="card" style="position: relative;">
+                    <h3 class="section-title">Análise de Fluxo Financeiro</h3>
+                    <div class="main-chart-container" id="nexa-chart-container" style="position: relative; width: 100%; height: 200px; margin-top: 20px;">
+                        <div class="y-axis"><span>R$ 80.000,00 &mdash;</span><span>R$ 40.000,00 &mdash;</span><span>R$ 0,00 &mdash;</span></div>
+                        <div class="chart-tooltip-box" id="chart-tooltip">
+                            <div class="tooltip-date" id="tooltip-date">Dia 01</div>
+                            <div class="tooltip-value receita"><span class="dot"></span> Receita: <strong id="tooltip-rec">R$ 0,00</strong></div>
+                            <div class="tooltip-value despesa"><span class="dot"></span> Despesa: <strong id="tooltip-des">R$ 0,00</strong></div>
+                        </div>
+                        <svg class="chart-svg" id="interactive-chart" viewBox="0 0 400 200" preserveAspectRatio="none" style="width: 100%; height: 100%; display: block;">
+                            <defs><linearGradient id="chartGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#9D4EDD" stop-opacity="0.3" /><stop offset="100%" stop-color="#9D4EDD" stop-opacity="0" /></linearGradient></defs>
+                            <path id="bezier-area" d="" fill="url(#chartGrad)"></path>
+                            <path id="bezier-path" d="" fill="none" stroke="var(--nexa-purple, #9D4EDD)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                            <path id="bezier-path-despesa" d="" fill="none" stroke="var(--danger-red, #FF3B30)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round" stroke-linejoin="round"></path>
+                            <circle id="hover-dot" cx="0" cy="0" r="4" fill="#FFFFFF" stroke="var(--nexa-purple, #9D4EDD)" stroke-width="2" style="display: none;" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="section-title"><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--nexa-purple);"></i> Sugestões Nexus AI</h3>
+                    <div class="ai-card"><div class="ai-card-title"><i class="fa-solid fa-triangle-exclamation"></i> Alerta Financeiro</div><p>Custo de logística subiu 15%. Revisar transportadoras?</p></div>
+                </div>
+            </section>
+        </div>
+
+        <div class="content-view" id="view-vendas">
+            <section class="metrics-grid">
+                <div class="card"><div class="card-header"><span class="card-title">Ticket Médio</span></div><div class="card-value" id="val-ticket">R$ 0,00</div></div>
+                <div class="card"><div class="card-header"><span class="card-title">Taxa de Conversão</span></div><div class="card-value" id="val-conversao">0%</div></div>
+                <div class="card"><div class="card-header"><span class="card-title">Novos Clientes (Mês)</span></div><div class="card-value" id="val-novos-clientes">+0</div></div>
+            </section>
+            <div class="card">
+                <h3 class="section-title">Pedidos Recentes</h3>
+                <table class="nexa-table">
+                    <thead><tr><th>ID</th><th>Cliente</th><th>Status</th><th>Total</th></tr></thead>
+                    <tbody>
+                        <tr><td>#1024</td><td>Loja Alfa Cosméticos</td><td><span class="status-badge success">Concluído</span></td><td>R$ 4.250,00</td></tr>
+                        <tr><td>#1023</td><td>Distribuidora Silva</td><td><span class="status-badge warning">Pendente</span></td><td>R$ 1.890,00</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="content-view" id="view-financeiro">
+            <section class="metrics-grid">
+                <div class="card"><div class="card-header"><span class="card-title">Contas a Receber</span></div><div class="card-value" id="val-receber">R$ 0,00</div></div>
+                <div class="card"><div class="card-header"><span class="card-title">Contas a Pagar</span></div><div class="card-value" id="val-pagar" style="color: var(--danger-red)">R$ 0,00</div></div>
+                <div class="card"><div class="card-header"><span class="card-title">Saldo em Caixa</span></div><div class="card-value" id="val-saldo" style="color: var(--success-green)">R$ 0,00</div></div>
+            </section>
+            <div class="card">
+                <h3 class="section-title"><i class="fa-solid fa-bolt" style="color: var(--warning-orange);"></i> Fluxo de Caixa Otimizado por Nexus AI</h3>
+                <p style="color: var(--text-secondary); line-height: 1.6;">Projeção de alta liquidez para os próximos 15 dias. Cenário ideal para antecipação de compras com fornecedores.</p>
+            </div>
+        </div>
+
+        <div class="content-view" id="view-rh">
+            <section class="metrics-grid">
+                <div class="card"><div class="card-header"><span class="card-title">Total Colaboradores</span></div><div class="card-value" id="val-colaboradores">0</div></div>
+                <div class="card"><div class="card-header"><span class="card-title">Admissões (Mês)</span></div><div class="card-value" id="val-admissoes">+0</div></div>
+                <div class="card"><div class="card-header"><span class="card-title">Índice Turnover</span></div><div class="card-value" id="val-turnover">0%</div></div>
+            </section>
+            <div class="card">
+                <h3 class="section-title">Aniversariantes & Eventos</h3>
+                <p style="color: var(--text-secondary);">Nenhum evento crítico agendado para hoje. Módulo integrado com a folha de pagamento ativa.</p>
+            </div>
+        </div>
+
+        <div class="content-view" id="view-marketing">
+            <section class="metrics-grid">
+                <div class="card"><div class="card-header"><span class="card-title">ROI de Campanhas</span></div><div class="card-value" id="val-roi">0x</div></div>
+                <div class="card"><div class="card-header"><span class="card-title">Custo por Lead (CPL)</span></div><div class="card-value" id="val-cpl">R$ 0,00</div></div>
+                <div class="card"><div class="card-header"><span class="card-title">Tráfego do Site</span></div><div class="card-value" id="val-trafego">0K</div></div>
+            </section>
+            <div class="card">
+                <h3 class="section-title">Desempenho dos Canais Anunciados</h3>
+                <p style="color: var(--text-secondary);">Anúncios em Redes Sociais gerando 65% das conversões estruturadas no sistema.</p>
+            </div>
+        </div>
+
+        <div class="content-view" id="view-logistica">
+            <section class="metrics-grid">
+                <div class="card"><div class="card-header"><span class="card-title">Aguardando Coleta</span></div><div class="card-value" id="val-coleta">0</div></div>
+                <div class="card"><div class="card-header"><span class="card-title">Em Transporte</span></div><div class="card-value" id="val-transporte">0</div></div>
+                <div class="card"><div class="card-header"><span class="card-title">Entregues Hoje</span></div><div class="card-value" id="val-entregues" style="color: var(--success-green)">0</div></div>
+            </section>
+            <div class="card">
+                <h3 class="section-title">Status da Frota e Despacho</h3>
+                <table class="nexa-table">
+                    <thead><tr><th>Rota</th><th>Motorista</th><th>Progresso</th><th>Ações</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td>São Paulo - Capital</td><td>Carlos Ramos</td>
+                            <td class="status-cell"><span class="status-badge success">Entregue</span></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Ribeirão Preto - Centro</td><td>Marcos Souza</td>
+                            <td class="status-cell"><span class="status-badge warning">Em Rota</span></td>
+                            <td>
+                                <button class="btn btn-ghost" onclick="concluirAcaoTabela(this, 'Entrega de Ribeirão Preto confirmada!')" style="padding: 4px 10px; font-size: 12px; border-color: var(--success-green); color: var(--success-green);">
+                                    <i class="fa-solid fa-check"></i> Baixar
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card" style="margin-top: 24px;">
+                <h3 class="section-title">Devoluções Pendentes</h3>
+                <div class="empty-state">
+                    <i class="fa-solid fa-box-open"></i>
+                    <h4>Nenhuma devolução registrada</h4>
+                    <p>O fluxo logístico está operando com 100% de conformidade hoje.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ECRÃ DE CHAT CORPORATIVO -->
+        <div class="content-view" id="view-chat">
+            <div class="chat-container">
+                
+                <!-- Barra Lateral do Chat -->
+                <div class="chat-sidebar">
+                    <div class="chat-search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" class="search-input" placeholder="Buscar conversas..." style="padding-top: 8px; padding-bottom: 8px;">
+                    </div>
+                    
+                    <h4 class="chat-section-title">CANAIS</h4>
+                    <div class="chat-list-item active"><span class="hash">#</span> geral</div>
+                    <div class="chat-list-item"><span class="hash">#</span> suporte-ti</div>
+                    <div class="chat-list-item"><span class="hash">#</span> operacoes</div>
+                    
+                    <h4 class="chat-section-title">MENSAGENS DIRETAS</h4>
+                    <div class="chat-list-item"><div class="chat-avatar">C</div> Carlos (Logística)</div>
+                    <div class="chat-list-item"><div class="chat-avatar">A</div> Ana (RH)</div>
+                    <!-- A própria Nexus AI como contacto direto -->
+                    <div class="chat-list-item"><div class="chat-avatar nexa-bot"><i class="fa-solid fa-wand-magic-sparkles"></i></div> Nexus AI</div>
+                </div>
+
+                <!-- Janela Principal do Chat -->
+                <div class="chat-main">
+                    <!-- Cabeçalho -->
+                    <div class="chat-header">
+                        <div class="chat-title-area">
+                            <h3 id="chat-current-title" style="font-size: 16px; margin-bottom: 4px;"># geral</h3>
+                            <span class="online-status"><span class="dot-online"></span> <span id="chat-online-count">12</span> online agora</span>
+                        </div>
+                    </div>
+
+                    <!-- Área de Mensagens -->
+                    <div class="chat-messages" id="chat-messages-container">
+                        
+                        <!-- Mensagem Recebida -->
+                        <div class="message received">
+                            <div class="msg-avatar">C</div>
+                            <div class="msg-content">
+                                <div class="msg-header"><span class="msg-author">Carlos (Logística)</span> <span class="msg-time">10:42</span></div>
+                                <div class="msg-bubble">Pessoal, alguém confirma se o pedido #1024 da Loja Alfa já foi despachado? O cliente está a perguntar.</div>
+                            </div>
+                        </div>
+
+                        <!-- Mensagem Enviada (O utilizador convoca a IA) -->
+                        <div class="message sent">
+                            <div class="msg-content">
+                                <div class="msg-header"><span class="msg-time">10:45</span></div>
+                                <div class="msg-bubble">Acho que sim Carlos, mas deixa-me confirmar. <span style="color: var(--nexa-purple); font-weight: 600;">@Nexa</span>, podes verificar o status do pedido #1024?</div>
+                            </div>
+                        </div>
+
+                        <!-- Resposta da Nexus AI -->
+                        <div class="message nexa-response">
+                            <div class="msg-avatar nexa-bot"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                            <div class="msg-content">
+                                <div class="msg-header"><span class="msg-author" style="color: var(--nexa-purple);">Nexus AI</span> <span class="msg-time">10:45</span></div>
+                                <div class="msg-bubble ai-bubble">
+                                    <strong>Status do Pedido #1024:</strong><br><br>
+                                    <span style="color: var(--text-secondary);">Cliente:</span> Loja Alfa Cosméticos<br>
+                                    <span style="color: var(--text-secondary);">Status:</span> <span style="color: var(--success-green); font-weight: 600;">Concluído e Entregue hoje às 09:30.</span><br><br>
+                                    O comprovativo de entrega já está anexado ao sistema central.
+                                </div>
+                                <div class="ai-actions">
+                                    <button class="btn btn-ghost" style="font-size: 11px; padding: 6px 10px;" onclick="showToast('Notificação enviada ao cliente.', 'success')">
+                                        <i class="fa-solid fa-paper-plane"></i> Notificar Cliente
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Área de Escrita -->
+                    <div class="chat-input-area">
+                        <button class="attach-btn"><i class="fa-solid fa-paperclip"></i></button>
+                        <input type="text" class="chat-input" placeholder="Escreva uma mensagem ou use @Nexa para chamar a assistente...">
+                        <button class="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-view" id="view-configuracoes">
+            <div class="card" style="margin-bottom: 24px;">
+                <h3 class="section-title">Configurações do Sistema</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px; max-width: 400px; margin-top: 16px;">
+                    <label style="font-size: 14px; color: var(--text-secondary);">Nome da Empresa</label>
+                    <input type="text" class="search-input" value="Nexa Corporation" style="padding-left: 16px; margin-bottom: 12px;">
+                    <label style="font-size: 14px; color: var(--text-secondary);">Modelo de Integração IA</label>
+                    <input type="text" class="search-input" value="Nexus Cognitive Core v2" style="padding-left: 16px; border-color: var(--nexa-purple);">
+                </div>
+            </div>
+            <div class="metrics-grid">
+                <div class="card">
+                    <h3 class="section-title">Design System: Botões</h3>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="showToast('Dados salvos!', 'success')"><i class="fa-solid fa-check"></i> Salvar</button>
+                        <button class="btn btn-ghost" onclick="openModal()"><i class="fa-solid fa-download"></i> Ação Modal</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="section-title">Design System: Controles</h3>
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 14px; color: var(--text-secondary);">Autenticação 2FA</span>
+                            <input type="checkbox" class="toggle-switch" checked>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 14px; color: var(--text-secondary);">Notificações IA</span>
+                            <input type="checkbox" class="toggle-switch">
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="section-title"><i class="fa-solid fa-flask"></i> Testes de Faturamento</h3>
+                    <div style="display: flex; gap: 12px; flex-direction: column;">
+                        <button class="btn btn-ghost" onclick="adicionarAoCarrinho('Módulo de Analytics AI', 450.00)" style="justify-content: center; border-color: var(--nexa-purple); color: var(--text-primary);">
+                            <i class="fa-solid fa-plus" style="color: var(--nexa-purple);"></i> Add Analytics (R$ 450)
+                        </button>
+                        <button class="btn btn-ghost" onclick="adicionarAoCarrinho('Servidor Dedicado Cloud', 850.00)" style="justify-content: center; border-color: var(--nexa-purple); color: var(--text-primary);">
+                            <i class="fa-solid fa-plus" style="color: var(--nexa-purple);"></i> Add Servidor (R$ 850)
+                        </button>
+                        <button class="btn btn-primary" onclick="showToast('Notificação testada!', 'success')" style="justify-content: center; margin-top: 12px;">
+                            <i class="fa-solid fa-bell"></i> Disparar Toast
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ELEMENTOS FLUTUANTES -->
+    <div class="fab-button"><i class="fa-solid fa-hand"></i></div>
+    <div id="toast-container" class="toast-container"></div>
+    
+    <div class="modal-backdrop" id="confirmation-modal">
+        <div class="modal-card">
+            <div class="modal-header">Confirmar Ação</div>
+            <div class="modal-body" style="color: var(--text-secondary); margin-bottom: 24px; font-size: 14px;">
+                Você tem certeza que deseja executar esta ação? Esta operação será registrada nos logs do sistema.
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-danger" onclick="executeAction()">Confirmar Ação</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- O CARRINHO -->
+    <div class="cart-drawer" id="cart-drawer">
+        
+        <!-- HEADER COM BOTÃO DE FECHAR -->
+        <div class="drawer-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+            <h3>Módulo de Faturamento</h3>
+            <button class="btn-ghost" onclick="closeCart()" style="padding: 4px 8px; cursor: pointer; border: none; font-size: 18px; color: var(--text-secondary);">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <!-- CORPO DO CARRINHO -->
+        <div class="cart-items" id="cart-items" style="flex: 1; display: flex; flex-direction: column; gap: 16px;">
+            <div style="padding: 16px; background: var(--bg-base); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color);">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="font-weight: 500; font-size: 14px;">Licença Nexa Enterprise</span>
+                    <strong style="color: var(--nexa-purple); font-size: 14px;">R$ 1.200,00</strong>
+                </div>
+                <!-- BOTÃO DE EXCLUIR ITEM -->
+                <button class="btn-ghost" style="padding: 6px 10px; border-color: rgba(255,61,0,0.3); color: var(--danger-red);">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- RODAPÉ COM O BOTÃO FINALIZAR -->
+        <div class="cart-footer" style="border-top: 1px solid var(--border-color); padding-top: 24px; display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 700;">
+                <span>Total:</span>
+                <strong>R$ 1.200,00</strong>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn btn-primary" onclick="finalizarPedidoNativo()" style="justify-content: center;">
+                    Finalizar Transação
+                </button>
+                <button class="btn btn-ghost" onclick="closeCart()" style="justify-content: center;">
+                    Adicionar Mais Módulos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
