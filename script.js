@@ -311,7 +311,15 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     });
-});
+
+    // 5. EVENTO DO ÍCONE DA IA
+    const btnIA = document.getElementById('btn-nexus-ia');
+    if (btnIA) {
+        btnIA.addEventListener('click', () => {
+             window.showToast('Nexus AI em fase de treinamento. Disponível em breve!', 'info');
+        });
+    }
+}); 
 
 // ==========================================
 // 5. FUNÇÕES GLOBAIS (MODAL, TOAST, SKELETON E CARRINHO)
