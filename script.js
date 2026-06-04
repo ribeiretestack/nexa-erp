@@ -454,5 +454,14 @@ window.concluirAcaoTabela = function(botao, mensagem) {
 // TRIBUTO EM MEMÓRIA
 //======================================================
 console.log(
-    "%cEm memória de Gabriel Frezza, eterno em nossas vidas!", "color: #9D4EDD; font-size: 16px; font-weight: bold; font-family: 'Inter', sans-serif; padding: 10px; border-left: 4px solid #9D4EDD; background: rgba(157,78, 221, 0.1);"
+    "%cIn memory of Gabriel Frezza, always in our lives!", "color: #9D4EDD; font-size: 16px; font-weight: bold; font-family: 'Inter', sans-serif; padding: 10px; border-left: 4px solid #9D4EDD; background: rgba(157,78, 221, 0.1);"
 );
+
+
+
+/*  [•_•]  Nexa Dev: Daniel Ribeiro
+ *   DR    ribeiretestack
+ *
+ *   In memory of Gabriel Frezza,
+ *   always in our lives!
+ */
