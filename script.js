@@ -123,6 +123,16 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    // 2.1. LOGO CLICÁVEL (VOLTA PARA O INÍCIO)
+    const logo = document.getElementById('logo-nexa');
+    const btnInicio = document.querySelector('.nav-item[data-target="inicio"]');
+
+    if (logo && btnInicio) {
+        logo.addEventListener('click', () => {
+            btnInicio.click(); // Isso faz com que ao clicar no "NEXA" ele tenha a mesma funcionalidade que ao clicar em "Início"
+        });
+    }
+
     // 3. MOTOR DO GRÁFICO
     const container = document.getElementById('nexa-chart-container');
     const tooltip = document.getElementById('chart-tooltip');
