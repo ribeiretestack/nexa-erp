@@ -1,5 +1,40 @@
+//===========================================
+// 0. PONTE COM O BANCO DE DADOS
+//===========================================
+const SUPABASE_URL = 'https://ekhlxkjgtmpbugchdygg.supabase.co'
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVraGx4a2pndG1wYnVnY2hkeWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2OTc2NTYsImV4cCI6MjA5NjI3MzY1Nn0.aOylfGNuvEEEKeDLnh-YQajLIeRxC5bAi50Oyj5DZqk'
+const nexaDB = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+console.log("Supabase concectado com sucesso!", nexaDB);
+
+//==========================================
+// 0.1 FUNÇÃO PARA BUSCAR DADOS DA NUVEM
+//==========================================
+async function carregarFluxoDaNuvem() {
+  console.log ("Iniciando busca de dados no banco...");
+  
+  // O sistema vai na tabela 'fluxo_financeiro', pega tudo e ordena por dia 
+  const { data, error } = await nexaDB 
+         .from('fluxo_financeiro')
+         .select('*')
+         .order('dia', {ascending: true});
+  
+  if (error) {
+    console.error("Erro na conexão com o banco de dados:", error)
+    return;
+  }
+  
+  console.log("SUCESSO ABSOLUTO! Os dados chegaram da nuvem:", data);
+  
+  //Aqui esta sendo substituído os dados fixos do código pelos reais do banco de dados
+  if (data && data.length > 0) {
+    window.NexaData.fluxoFinanceiro = data; 
+  }
+       
+}
+
 // ==========================================
-// 0. CÉREBRO DE DADOS DA NEXA (Escopo Global)
+// 1. CÉREBRO DE DADOS DA NEXA (Escopo Global)
 // ==========================================
 window.NexaData = {
     vendasHoje: { valor: 42500.00, percentual: 12.5 },
@@ -81,9 +116,12 @@ window.renderizarMetricas = function() {
     if(valEntregues) valEntregues.innerText = window.NexaData.logistica.entreguesHoje;
 };
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
+  
+  //Segura o sistema por alguns milissegundos até os dados da nuvem chegarem 
+  await carregarFluxoDaNuvem(); 
     
-    // 1. BOOT DO SISTEMA
+    // 2. BOOT DO SISTEMA
     const painelCards = document.querySelectorAll('.card');
     const nexaChart = document.getElementById('interactive-chart');
     painelCards.forEach(card => card.classList.add('skeleton'));
@@ -99,7 +137,7 @@ document.addEventListener("DOMContentLoaded", function () {
         showToast('Conexão estabelecida. Nexus AI online.', 'success');
     }, 1500);
 
-    // 2. NAVEGAÇÃO SPA (Com suporte ao Mobile)
+    // 3. NAVEGAÇÃO SPA (Com suporte ao Mobile)
     const menuItems = document.querySelectorAll(".nav-item");
     const views = document.querySelectorAll(".content-view");
 
@@ -123,7 +161,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // 2.1. LOGO CLICÁVEL (VOLTA PARA O INÍCIO)
+    // 3.1. LOGO CLICÁVEL (VOLTA PARA O INÍCIO)
     const logo = document.getElementById('logo-nexa');
     const btnInicio = document.querySelector('.nav-item[data-target="inicio"]');
 
@@ -133,7 +171,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // 3. MOTOR DO GRÁFICO
+    // 4. MOTOR DO GRÁFICO
     const container = document.getElementById('nexa-chart-container');
     const tooltip = document.getElementById('chart-tooltip');
     const svg = document.getElementById('interactive-chart');
@@ -332,7 +370,7 @@ document.addEventListener("DOMContentLoaded", function () {
 }); 
 
 // ==========================================
-// 5. FUNÇÕES GLOBAIS (MODAL, TOAST, SKELETON E CARRINHO)
+// 6. FUNÇÕES GLOBAIS (MODAL, TOAST, SKELETON E CARRINHO)
 // ==========================================
 window.openModal = () => { const m = document.getElementById('confirmation-modal'); if(m) m.classList.add('active'); };
 window.closeModal = () => { const m = document.getElementById('confirmation-modal'); if(m) m.classList.remove('active'); };
