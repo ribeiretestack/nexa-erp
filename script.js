@@ -239,6 +239,36 @@ document.addEventListener("DOMContentLoaded", async function () {
         svgReceita.setAttribute('d', pathRecD);
         if (svgDespesa) svgDespesa.setAttribute('d', pathDesD);
         svgArea.setAttribute('d', areaD);
+    
+    //==========================================
+    // 4.1 EFEITO DE ANIMAÇÃO DO GRÁFICO BÉZIER
+    //==========================================
+
+    // 1. Esconde a Área com gradiente e a linha de despesa para aparecerem suavemente
+    svgArea.style.opacity = '0';
+    svgArea.style.transition = 'opacity 1.5s ease-in-out';
+
+    if (svgDespesa) {
+        svgDespesa.style.opacity = '0';
+        svgDespesa.style.transition = 'opacity 1.5s ease-in-out';
+    }
+
+    // 2. Truque do "Desenho" da Linha Principal (Receita)
+    const lengthRec = svgReceita.getTotalLength();
+    svgReceita.style.strokeDasharray = lengthRec;
+    svgReceita.style.strokeDashoffset = lengthRec; // Esconde a linha puxando ela para trás
+    svgReceita.style.transition = 'stroke-dashoffset 1.5s ease-in-out';
+
+    // 3. Start da animação
+    svgReceita.getBoundingClientRect(); // Força o navegador a ler o código acima (2) antes de animar 
+
+    // Animação fluida, trazendo tudo para a tela no tempo certo
+      setTimeout(() => {
+        svgReceita.style.strokeDashoffset = '0'; // Uma linha roxa é desenhada da esquerda para direita
+        svgArea.style.opacity = '1'; // Opacidade do gradiente roxo
+        if (svgDespesa) svgDespesa.style.opacity = '1'; // A linha vermelha aparece suavemente
+      }, 100);
+
     }
 
     if (container) {
@@ -305,7 +335,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
     }
 
-    // 4. LÓGICA DO CHAT CORPORATIVO
+    // 5. LÓGICA DO CHAT CORPORATIVO
     const chatItems = document.querySelectorAll('.chat-list-item');
     const chatTitle = document.getElementById('chat-current-title');
     const chatMessages = document.getElementById('chat-messages-container');
@@ -360,7 +390,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
     });
 
-    // 5. EVENTO DO ÍCONE DA IA
+    // 6. EVENTO DO ÍCONE DA IA
     const btnIA = document.getElementById('btn-nexus-ia');
     if (btnIA) {
         btnIA.addEventListener('click', () => {
@@ -370,7 +400,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 }); 
 
 // ==========================================
-// 6. FUNÇÕES GLOBAIS (MODAL, TOAST, SKELETON E CARRINHO)
+// 7. FUNÇÕES GLOBAIS (MODAL, TOAST, SKELETON E CARRINHO)
 // ==========================================
 window.openModal = () => { const m = document.getElementById('confirmation-modal'); if(m) m.classList.add('active'); };
 window.closeModal = () => { const m = document.getElementById('confirmation-modal'); if(m) m.classList.remove('active'); };
@@ -461,20 +491,73 @@ window.removerDoCarrinho = function(index) {
     window.atualizarCarrinho();
 };
 
-window.finalizarPedidoNativo = function() {
+window.finalizarPedidoNativo = async function() {
     if (itensCarrinho.length === 0) {
         window.showToast('Adicione módulos antes de gerar o faturamento!', 'warning');
         return;
     }
+    
+    // 1. Feedback visual no botão
+    const btnFinalizar = document.querySelector('.cart-footer .btn-primary');
+    const textoOriginal = btnFinalizar.innerHTML;
+    btnFinalizar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
+    btnFinalizar.disabled = true;
+
     const totalPedido = itensCarrinho.reduce((acc, item) => acc + item.preco, 0);
-    window.NexaData.vendasHoje.valor += totalPedido;
-    window.renderizarMetricas();
-    itensCarrinho = [];
-    window.atualizarCarrinho();
-    window.closeCart();
-    window.showToast(`Faturamento de ${totalPedido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} processado com sucesso!`, 'success');
+    const resumoItens = itensCarrinho.map(item => item.nome).join(', ');
+
+    // 2. Manda para a nuvem e pede o retorno (.select()) para pegar o ID oficial
+    const { data, error } = await nexaDB
+        .from('pedidos')
+        .insert([
+            { descricao: resumoItens, valor_total: totalPedido }
+        ])
+        .select();
+
+    // Restaura o botão
+    btnFinalizar.innerHTML = textoOriginal;
+    btnFinalizar.disabled = false;
+
+    if (error) {
+        console.error("Erro ao salvar pedido na nuvem", error);
+        window.showToast('Falha na comunicação com o banco de dados.', 'error');
+        return;
+    }
+
+    //=======================================
+    // 8. ATUALIZAR O ECRÃ DE VENDAS
+    //=======================================
+    const tabelaVendas = document.querySelector('#view-vendas .nexa-table tbody');
+
+    if(tabelaVendas && data.length > 0) {
+        const pedidoSalvo = data[0]; // Pega os dados exatos que o banco de dados acabou de criar
+        
+        // Cria a tag <tr> e injeta as colunas (<td>) com os dados
+        const novaLinha = document.createElement('tr');
+        novaLinha.innerHTML = `
+            <td>#${pedidoSalvo.id}</td>
+            <td>Cliente Avulso (Carrinho)</td>
+            <td><span class="status-badge success">Concluído</span></td>
+            <td>${totalPedido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+        `;
+
+        // Coloca a nova venda no topo da tabela, empurrando as antigas para baixo
+        tabelaVendas.insertBefore(novaLinha, tabelaVendas.firstChild);
+
+        // Atualiza os números gerais do painel
+        window.NexaData.vendasHoje.valor += totalPedido;
+        window.renderizarMetricas();
+
+        // Zera e fecha o carrinho
+        itensCarrinho = [];
+        window.atualizarCarrinho();
+        window.closeCart();
+
+        window.showToast('Faturamento processado e enviado para o ecrã de Vendas!', 'success');
+    };
 };
 
+    
 // --- INTERAÇÕES DA TABELA ---
 window.concluirAcaoTabela = function(botao, mensagem) {
     const linha = botao.closest('tr');
