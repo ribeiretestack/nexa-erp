@@ -23,6 +23,7 @@ async function carregarFluxoDaNuvem() {
     console.error("Erro na conexão com o banco de dados:", error)
     return;
   }
+}
   
   console.log("SUCESSO ABSOLUTO! Os dados chegaram da nuvem:", data);
   
@@ -31,6 +32,48 @@ async function carregarFluxoDaNuvem() {
     window.NexaData.fluxoFinanceiro = data; 
   }
        
+//==========================================
+// 0.2 FUNÇÃO PARA BUSCAR PEDIDOS DA NUVEM
+//==========================================
+async function carregarPedidosDaNuvem() {
+    console.log("Iniciando busca do histórico de pedidos...");
+    
+    // Puxa tudo da tabela 'pedidos' e ordena do mais recente pro mais antigo (maior ID primeiro)
+    const { data, error } = await nexaDB
+        .from('pedidos')
+        .select('*')
+        .order('id', { ascending: false });
+
+    if (error) {
+        console.error("Erro ao buscar histórico de vendas:", error);
+        return;
+    }
+
+    const tabelaVendas = document.querySelector('#view-vendas .nexa-table tbody');
+    if (!tabelaVendas) return;
+
+    // Limpa os pedidos estáticos que estavam fixos no HTML
+    tabelaVendas.innerHTML = '';
+
+    // Se o banco estiver vazio
+    if (data.length === 0) {
+        tabelaVendas.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Nenhuma venda registrada ainda.</td></tr>`;
+        return;
+    }
+
+    // Se tiver dados, cria as linhas visuais dinamicamente
+    data.forEach(pedido => {
+        const novaLinha = document.createElement('tr');
+        novaLinha.innerHTML = `
+            <td>#${pedido.id}</td>
+            <td>Cliente Avulso (Carrinho)</td>
+            <td><span class="status-badge success">Concluído</span></td>
+            <td>${pedido.valor_total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+        `;
+        tabelaVendas.appendChild(novaLinha);
+    });
+    
+    console.log("Histórico de pedidos carregado com sucesso!");
 }
 
 // ==========================================
@@ -119,7 +162,8 @@ window.renderizarMetricas = function() {
 document.addEventListener("DOMContentLoaded", async function () {
   
   //Segura o sistema por alguns milissegundos até os dados da nuvem chegarem 
-  await carregarFluxoDaNuvem(); 
+  await carregarFluxoDaNuvem();
+  await carregarPedidosDaNuvem(); 
     
     // 2. BOOT DO SISTEMA
     const painelCards = document.querySelectorAll('.card');
