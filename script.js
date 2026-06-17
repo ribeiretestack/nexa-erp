@@ -1,44 +1,39 @@
 //===========================================
 // 0. PONTE COM O BANCO DE DADOS
 //===========================================
-const SUPABASE_URL = 'https://ekhlxkjgtmpbugchdygg.supabase.co'
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVraGx4a2pndG1wYnVnY2hkeWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2OTc2NTYsImV4cCI6MjA5NjI3MzY1Nn0.aOylfGNuvEEEKeDLnh-YQajLIeRxC5bAi50Oyj5DZqk'
+const SUPABASE_URL = 'https://ekhlxkjgtmpbugchdygg.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVraGx4a2pndG1wYnVnY2hkeWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2OTc2NTYsImV4cCI6MjA5NjI3MzY1Nn0.aOylfGNuvEEEKeDLnh-YQajLIeRxC5bAi50Oyj5DZqk';
 const nexaDB = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-console.log("Supabase concectado com sucesso!", nexaDB);
+console.log("Supabase conectado com sucesso!", nexaDB);
 
 //==========================================
 // 0.1 FUNÇÃO PARA BUSCAR DADOS DA NUVEM
 //==========================================
 async function carregarFluxoDaNuvem() {
-  console.log ("Iniciando busca de dados no banco...");
+    console.log("Iniciando busca de dados no banco...");
   
-  // O sistema vai na tabela 'fluxo_financeiro', pega tudo e ordena por dia 
-  const { data, error } = await nexaDB 
+    const { data, error } = await nexaDB 
          .from('fluxo_financeiro')
          .select('*')
          .order('dia', {ascending: true});
   
-  if (error) {
-    console.error("Erro na conexão com o banco de dados:", error)
-    return;
-  }
+    if (error) {
+        console.error("Erro na conexão com o banco de dados:", error);
+        return;
+    }
+  
+    if (data && data.length > 0) {
+        window.NexaData.fluxoFinanceiro = data; 
+    }
 }
-  
-  console.log("SUCESSO ABSOLUTO! Os dados chegaram da nuvem:", data);
-  
-  //Aqui esta sendo substituído os dados fixos do código pelos reais do banco de dados
-  if (data && data.length > 0) {
-    window.NexaData.fluxoFinanceiro = data; 
-  }
-       
+
 //==========================================
 // 0.2 FUNÇÃO PARA BUSCAR PEDIDOS DA NUVEM
 //==========================================
 async function carregarPedidosDaNuvem() {
     console.log("Iniciando busca do histórico de pedidos...");
     
-    // Puxa tudo da tabela 'pedidos' e ordena do mais recente pro mais antigo (maior ID primeiro)
     const { data, error } = await nexaDB
         .from('pedidos')
         .select('*')
@@ -52,16 +47,13 @@ async function carregarPedidosDaNuvem() {
     const tabelaVendas = document.querySelector('#view-vendas .nexa-table tbody');
     if (!tabelaVendas) return;
 
-    // Limpa os pedidos estáticos que estavam fixos no HTML
     tabelaVendas.innerHTML = '';
 
-    // Se o banco estiver vazio
     if (data.length === 0) {
         tabelaVendas.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Nenhuma venda registrada ainda.</td></tr>`;
         return;
     }
 
-    // Se tiver dados, cria as linhas visuais dinamicamente
     data.forEach(pedido => {
         const novaLinha = document.createElement('tr');
         novaLinha.innerHTML = `
@@ -72,8 +64,6 @@ async function carregarPedidosDaNuvem() {
         `;
         tabelaVendas.appendChild(novaLinha);
     });
-    
-    console.log("Histórico de pedidos carregado com sucesso!");
 }
 
 // ==========================================
@@ -159,13 +149,33 @@ window.renderizarMetricas = function() {
     if(valEntregues) valEntregues.innerText = window.NexaData.logistica.entreguesHoje;
 };
 
+// ======================================
+// 2. BOOT DO SISTEMA E WEBSOCKET
+// ======================================
 document.addEventListener("DOMContentLoaded", async function () {
   
-  //Segura o sistema por alguns milissegundos até os dados da nuvem chegarem 
-  await carregarFluxoDaNuvem();
-  await carregarPedidosDaNuvem(); 
-    
-    // 2. BOOT DO SISTEMA
+    await carregarFluxoDaNuvem();
+    await carregarPedidosDaNuvem(); 
+
+    // O RADAR DE TEMPO REAL
+    nexaDB
+      .channel('vendas-ao-vivo')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pedidos'}, (payload) => {
+        console.log("Radar Nexa: Nova venda detectada na nuvem!", payload.new);
+        const valorFormatado = payload.new.valor_total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        
+        // 1. Mostra um aviso visual na tela para o usuario
+        window.showToast(`Nova venda automática: ${valorFormatado}`, 'success');
+        
+        // 2. Atualiza a tabela de pedidos dinamicamente
+        carregarPedidosDaNuvem();
+        
+        // 3. SOMA O VALOR NO PAINEL E ATUALIZA OS NÚMEROS GERAIS
+        window.NexaData.vendasHoje.valor += payload.new.valor_total;
+        window.renderizarMetricas();
+      })
+      .subscribe();
+
     const painelCards = document.querySelectorAll('.card');
     const nexaChart = document.getElementById('interactive-chart');
     painelCards.forEach(card => card.classList.add('skeleton'));
@@ -181,7 +191,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         showToast('Conexão estabelecida. Nexus AI online.', 'success');
     }, 1500);
 
-    // 3. NAVEGAÇÃO SPA (Com suporte ao Mobile)
+    // NAVEGAÇÃO SPA
     const menuItems = document.querySelectorAll(".nav-item");
     const views = document.querySelectorAll(".content-view");
 
@@ -198,24 +208,21 @@ document.addEventListener("DOMContentLoaded", async function () {
                     view.classList.add("active");
                 }
             });
-            // Opcional: Se for num ecrã muito pequeno, fazer scroll até ao topo após clicar
             if (window.innerWidth <= 900) {
                 document.querySelector('.main-wrapper').scrollTo(0, 0);
             }
         });
     });
 
-    // 3.1. LOGO CLICÁVEL (VOLTA PARA O INÍCIO)
     const logo = document.getElementById('logo-nexa');
     const btnInicio = document.querySelector('.nav-item[data-target="inicio"]');
-
     if (logo && btnInicio) {
         logo.addEventListener('click', () => {
-            btnInicio.click(); // Isso faz com que ao clicar no "NEXA" ele tenha a mesma funcionalidade que ao clicar em "Início"
+            btnInicio.click(); 
         });
     }
 
-    // 4. MOTOR DO GRÁFICO
+    // MOTOR DO GRÁFICO
     const container = document.getElementById('nexa-chart-container');
     const tooltip = document.getElementById('chart-tooltip');
     const svg = document.getElementById('interactive-chart');
@@ -284,35 +291,26 @@ document.addEventListener("DOMContentLoaded", async function () {
         if (svgDespesa) svgDespesa.setAttribute('d', pathDesD);
         svgArea.setAttribute('d', areaD);
     
-    //==========================================
-    // 4.1 EFEITO DE ANIMAÇÃO DO GRÁFICO BÉZIER
-    //==========================================
+        svgArea.style.opacity = '0';
+        svgArea.style.transition = 'opacity 1.5s ease-in-out';
 
-    // 1. Esconde a Área com gradiente e a linha de despesa para aparecerem suavemente
-    svgArea.style.opacity = '0';
-    svgArea.style.transition = 'opacity 1.5s ease-in-out';
+        if (svgDespesa) {
+            svgDespesa.style.opacity = '0';
+            svgDespesa.style.transition = 'opacity 1.5s ease-in-out';
+        }
 
-    if (svgDespesa) {
-        svgDespesa.style.opacity = '0';
-        svgDespesa.style.transition = 'opacity 1.5s ease-in-out';
-    }
+        const lengthRec = svgReceita.getTotalLength();
+        svgReceita.style.strokeDasharray = lengthRec;
+        svgReceita.style.strokeDashoffset = lengthRec;
+        svgReceita.style.transition = 'stroke-dashoffset 1.5s ease-in-out';
 
-    // 2. Truque do "Desenho" da Linha Principal (Receita)
-    const lengthRec = svgReceita.getTotalLength();
-    svgReceita.style.strokeDasharray = lengthRec;
-    svgReceita.style.strokeDashoffset = lengthRec; // Esconde a linha puxando ela para trás
-    svgReceita.style.transition = 'stroke-dashoffset 1.5s ease-in-out';
+        svgReceita.getBoundingClientRect(); 
 
-    // 3. Start da animação
-    svgReceita.getBoundingClientRect(); // Força o navegador a ler o código acima (2) antes de animar 
-
-    // Animação fluida, trazendo tudo para a tela no tempo certo
-      setTimeout(() => {
-        svgReceita.style.strokeDashoffset = '0'; // Uma linha roxa é desenhada da esquerda para direita
-        svgArea.style.opacity = '1'; // Opacidade do gradiente roxo
-        if (svgDespesa) svgDespesa.style.opacity = '1'; // A linha vermelha aparece suavemente
-      }, 100);
-
+        setTimeout(() => {
+            svgReceita.style.strokeDashoffset = '0'; 
+            svgArea.style.opacity = '1'; 
+            if (svgDespesa) svgDespesa.style.opacity = '1'; 
+        }, 100);
     }
 
     if (container) {
@@ -379,7 +377,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
     }
 
-    // 5. LÓGICA DO CHAT CORPORATIVO
+    // LÓGICA DO CHAT CORPORATIVO
     const chatItems = document.querySelectorAll('.chat-list-item');
     const chatTitle = document.getElementById('chat-current-title');
     const chatMessages = document.getElementById('chat-messages-container');
@@ -434,7 +432,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
     });
 
-    // 6. EVENTO DO ÍCONE DA IA
     const btnIA = document.getElementById('btn-nexus-ia');
     if (btnIA) {
         btnIA.addEventListener('click', () => {
@@ -444,7 +441,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 }); 
 
 // ==========================================
-// 7. FUNÇÕES GLOBAIS (MODAL, TOAST, SKELETON E CARRINHO)
+// 7. FUNÇÕES GLOBAIS (MODAL, TOAST E CARRINHO)
 // ==========================================
 window.openModal = () => { const m = document.getElementById('confirmation-modal'); if(m) m.classList.add('active'); };
 window.closeModal = () => { const m = document.getElementById('confirmation-modal'); if(m) m.classList.remove('active'); };
@@ -541,7 +538,6 @@ window.finalizarPedidoNativo = async function() {
         return;
     }
     
-    // 1. Feedback visual no botão
     const btnFinalizar = document.querySelector('.cart-footer .btn-primary');
     const textoOriginal = btnFinalizar.innerHTML;
     btnFinalizar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
@@ -550,7 +546,6 @@ window.finalizarPedidoNativo = async function() {
     const totalPedido = itensCarrinho.reduce((acc, item) => acc + item.preco, 0);
     const resumoItens = itensCarrinho.map(item => item.nome).join(', ');
 
-    // 2. Manda para a nuvem e pede o retorno (.select()) para pegar o ID oficial
     const { data, error } = await nexaDB
         .from('pedidos')
         .insert([
@@ -558,7 +553,6 @@ window.finalizarPedidoNativo = async function() {
         ])
         .select();
 
-    // Restaura o botão
     btnFinalizar.innerHTML = textoOriginal;
     btnFinalizar.disabled = false;
 
@@ -568,15 +562,11 @@ window.finalizarPedidoNativo = async function() {
         return;
     }
 
-    //=======================================
-    // 8. ATUALIZAR O ECRÃ DE VENDAS
-    //=======================================
     const tabelaVendas = document.querySelector('#view-vendas .nexa-table tbody');
 
     if(tabelaVendas && data.length > 0) {
-        const pedidoSalvo = data[0]; // Pega os dados exatos que o banco de dados acabou de criar
+        const pedidoSalvo = data[0]; 
         
-        // Cria a tag <tr> e injeta as colunas (<td>) com os dados
         const novaLinha = document.createElement('tr');
         novaLinha.innerHTML = `
             <td>#${pedidoSalvo.id}</td>
@@ -585,14 +575,11 @@ window.finalizarPedidoNativo = async function() {
             <td>${totalPedido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
         `;
 
-        // Coloca a nova venda no topo da tabela, empurrando as antigas para baixo
         tabelaVendas.insertBefore(novaLinha, tabelaVendas.firstChild);
 
-        // Atualiza os números gerais do painel
         window.NexaData.vendasHoje.valor += totalPedido;
         window.renderizarMetricas();
 
-        // Zera e fecha o carrinho
         itensCarrinho = [];
         window.atualizarCarrinho();
         window.closeCart();
@@ -600,9 +587,7 @@ window.finalizarPedidoNativo = async function() {
         window.showToast('Faturamento processado e enviado para o ecrã de Vendas!', 'success');
     };
 };
-
     
-// --- INTERAÇÕES DA TABELA ---
 window.concluirAcaoTabela = function(botao, mensagem) {
     const linha = botao.closest('tr');
     const statusCell = linha.querySelector('.status-cell');
@@ -615,18 +600,13 @@ window.concluirAcaoTabela = function(botao, mensagem) {
     window.showToast(mensagem, 'success');
 };
 
-// =====================================================
-// TRIBUTO EM MEMÓRIA
-//======================================================
 console.log(
     "%cIn memory of Gabriel Frezza, always in our lives!", "color: #9D4EDD; font-size: 16px; font-weight: bold; font-family: 'Inter', sans-serif; padding: 10px; border-left: 4px solid #9D4EDD; background: rgba(157,78, 221, 0.1);"
 );
 
-
-
-/*  [•_•]  Nexa Dev: Daniel Ribeiro
- *   DR    ribeiretestack
+/* [•_•]  Nexa Dev: Daniel Ribeiro
+ * DR    ribeiretestack
  *
- *   In memory of Gabriel Frezza,
- *   always in our lives!
+ * In memory of Gabriel Frezza,
+ * always in our lives!
  */
